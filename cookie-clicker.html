@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クッキークリッカー</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 5px;
+            min-width: 150px;
+        }
+        
+        .stat h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .cookie {
+            width: 200px;
+            height: 200px;
+            background: #D2691E;
+            border-radius: 50%;
+            margin: 20px auto;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .cookie:hover {
+            transform: scale(1.05);
+        }
+        
+        .cookie:active {
+            transform: scale(0.95);
+        }
+        
+        .cookie::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #8B4513;
+            border-radius: 50%;
+            top: 30px;
+            left: 50px;
+        }
+        
+        .cookie::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #8B4513;
+            border-radius: 50%;
+            top: 80px;
+            right: 40px;
+        }
+        
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .upgrade {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upgrade:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .upgrade:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .upgrade-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .upgrade-cost {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .upgrade-owned {
+            color: #90EE90;
+            font-size: 0.9em;
+        }
+        
+        .click-effect {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2em;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            animation: floatUp 1s ease-out forwards;
+            z-index: 1000;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 クッキークリッカー</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <h3>クッキー</h3>
+                <div class="stat-value" id="cookies">0</div>
+            </div>
+            <div class="stat">
+                <h3>クリック毎</h3>
+                <div class="stat-value" id="cookiesPerClick">1</div>
+            </div>
+            <div class="stat">
+                <h3>毎秒</h3>
+                <div class="stat-value" id="cookiesPerSecond">0</div>
+            </div>
+            <div class="stat">
+                <h3>総クッキー</h3>
+                <div class="stat-value" id="totalCookies">0</div>
+            </div>
+        </div>
+        
+        <div class="cookie" id="cookie">🍪</div>
+        
+        <div class="upgrades">
+            <button class="upgrade" id="cursor" onclick="buyUpgrade('cursor')">
+                <div class="upgrade-name">カーソル</div>
+                <div>毎秒 0.1 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="cursor-cost">15</span></div>
+                <div class="upgrade-owned">所有: <span id="cursor-owned">0</span></div>
+            </button>
+            
+            <button class="upgrade" id="grandma" onclick="buyUpgrade('grandma')">
+                <div class="upgrade-name">おばあちゃん</div>
+                <div>毎秒 1 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="grandma-cost">100</span></div>
+                <div class="upgrade-owned">所有: <span id="grandma-owned">0</span></div>
+            </button>
+            
+            <button class="upgrade" id="farm" onclick="buyUpgrade('farm')">
+                <div class="upgrade-name">農場</div>
+                <div>毎秒 8 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="farm-cost">1100</span></div>
+                <div class="upgrade-owned">所有: <span id="farm-owned">0</span></div>
+            </button>
+            
+            <button class="upgrade" id="mine" onclick="buyUpgrade('mine')">
+                <div class="upgrade-name">鉱山</div>
+                <div>毎秒 47 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="mine-cost">12000</span></div>
+                <div class="upgrade-owned">所有: <span id="mine-owned">0</span></div>
+            </button>
+            
+            <button class="upgrade" id="factory" onclick="buyUpgrade('factory')">
+                <div class="upgrade-name">工場</div>
+                <div>毎秒 260 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="factory-cost">130000</span></div>
+                <div class="upgrade-owned">所有: <span id="factory-owned">0</span></div>
+            </button>
+            
+            <button class="upgrade" id="bank" onclick="buyUpgrade('bank')">
+                <div class="upgrade-name">銀行</div>
+                <div>毎秒 1400 クッキー</div>
+                <div class="upgrade-cost">コスト: <span id="bank-cost">1400000</span></div>
+                <div class="upgrade-owned">所有: <span id="bank-owned">0</span></div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ゲーム状態
+        let gameState = {
+            cookies: 0,
+            totalCookies: 0,
+            cookiesPerClick: 1,
+            cookiesPerSecond: 0,
+            upgrades: {
+                cursor: { owned: 0, cost: 15, production: 0.1 },
+                grandma: { owned: 0, cost: 100, production: 1 },
+                farm: { owned: 0, cost: 1100, production: 8 },
+                mine: { owned: 0, cost: 12000, production: 47 },
+                factory: { owned: 0, cost: 130000, production: 260 },
+                bank: { owned: 0, cost: 1400000, production: 1400 }
+            }
+        };
+
+        // DOM要素
+        const cookieButton = document.getElementById('cookie');
+        const cookiesDisplay = document.getElementById('cookies');
+        const cookiesPerClickDisplay = document.getElementById('cookiesPerClick');
+        const cookiesPerSecondDisplay = document.getElementById('cookiesPerSecond');
+        const totalCookiesDisplay = document.getElementById('totalCookies');
+
+        // クッキークリック機能
+        cookieButton.addEventListener('click', function(e) {
+            gameState.cookies += gameState.cookiesPerClick;
+            gameState.totalCookies += gameState.cookiesPerClick;
+            
+            // クリックエフェクト
+            createClickEffect(e.clientX, e.clientY, gameState.cookiesPerClick);
+            updateDisplay();
+            updateUpgradeButtons();
+        });
+
+        // クリックエフェクト作成
+        function createClickEffect(x, y, amount) {
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.textContent = '+' + formatNumber(amount);
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            document.body.appendChild(effect);
+            
+            setTimeout(() => {
+                document.body.removeChild(effect);
+            }, 1000);
+        }
+
+        // アップグレード購入
+        function buyUpgrade(type) {
+            const upgrade = gameState.upgrades[type];
+            if (gameState.cookies >= upgrade.cost) {
+                gameState.cookies -= upgrade.cost;
+                upgrade.owned++;
+                upgrade.cost = Math.ceil(upgrade.cost * 1.15);
+                
+                calculateCookiesPerSecond();
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        // 毎秒クッキー計算
+        function calculateCookiesPerSecond() {
+            gameState.cookiesPerSecond = 0;
+            for (let type in gameState.upgrades) {
+                const upgrade = gameState.upgrades[type];
+                gameState.cookiesPerSecond += upgrade.owned * upgrade.production;
+            }
+        }
+
+        // 数値フォーマット
+        function formatNumber(num) {
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(1) + 'B';
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return Math.floor(num).toString();
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            cookiesDisplay.textContent = formatNumber(gameState.cookies);
+            cookiesPerClickDisplay.textContent = formatNumber(gameState.cookiesPerClick);
+            cookiesPerSecondDisplay.textContent = formatNumber(gameState.cookiesPerSecond);
+            totalCookiesDisplay.textContent = formatNumber(gameState.totalCookies);
+        }
+
+        // アップグレードボタン更新
+        function updateUpgradeButtons() {
+            for (let type in gameState.upgrades) {
+                const upgrade = gameState.upgrades[type];
+                const button = document.getElementById(type);
+                const costElement = document.getElementById(type + '-cost');
+                const ownedElement = document.getElementById(type + '-owned');
+                
+                if (costElement) costElement.textContent = formatNumber(upgrade.cost);
+                if (ownedElement) ownedElement.textContent = upgrade.owned;
+                
+                if (button) {
+                    button.disabled = gameState.cookies < upgrade.cost;
+                }
+            }
+        }
+
+        // 自動生産
+        function autoProduction() {
+            if (gameState.cookiesPerSecond > 0) {
+                const production = gameState.cookiesPerSecond / 10; // 100ms毎に1/10秒分
+                gameState.cookies += production;
+                gameState.totalCookies += production;
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        // ローカルストレージに保存
+        function saveGame() {
+            localStorage.setItem('cookieClickerSave', JSON.stringify(gameState));
+        }
+
+        // ローカルストレージから読み込み
+        function loadGame() {
+            const savedGame = localStorage.getItem('cookieClickerSave');
+            if (savedGame) {
+                gameState = JSON.parse(savedGame);
+                calculateCookiesPerSecond();
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        // 初期化
+        function init() {
+            loadGame();
+            updateDisplay();
+            updateUpgradeButtons();
+            
+            // 100ms毎に自動生産
+            setInterval(autoProduction, 100);
+            
+            // 5秒毎に自動保存
+            setInterval(saveGame, 5000);
+        }
+
+        // ゲーム開始
+        init();
+    </script>
+</body>
+</html>
